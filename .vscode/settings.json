@@ -2,7 +2,9 @@
 	"cSpell.words": [
 		"Exif",
 		"getexif",
+		"ILCE",
 		"padx",
-		"pady"
+		"pady",
+		"textvariable"
 	]
 }
