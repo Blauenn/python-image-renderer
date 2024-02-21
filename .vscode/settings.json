@@ -1,10 +1,13 @@
 {
 	"cSpell.words": [
+		"cairosvg",
 		"Exif",
 		"getexif",
 		"ILCE",
+		"imshow",
 		"padx",
 		"pady",
+		"textsize",
 		"textvariable"
 	]
 }
