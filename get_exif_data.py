@@ -10,8 +10,13 @@ shutter = ""
 aperture = ""
 date = ""
 
+
 def apex_to_aperture(apex_value):
-    return round(2 ** (apex_value / 2), 4)
+    result = round(2 ** (apex_value / 2), 4)
+    if result.is_integer():
+        return int(result)
+    else:
+        return result
 
 
 def get_exif_data(file_path):
@@ -30,14 +35,20 @@ def get_exif_data(file_path):
                         lens_focal_length = f"{
                             int(min_length)}-{int(max_length)}mm"
                 elif tag_name == "Make":
-                    make = value.capitalize()
+                    if (value == "NIKON CORPORATION"):
+                        make = "Nikon"
+                    else:
+                        make = value.capitalize()
                 elif tag_name == "Model":
+                    # Alpha lineup
                     if value == "ILCE-5100":
                         model = "A5100"
                     elif value == "ILCE-7M3":
                         model = "A7 III"
                     elif value == "ILCE-7M4":
                         model = "A7 IV"
+                    elif str(value).startswith("NIKON "):
+                        model = value.removeprefix("NIKON ")
                     else:
                         model = value
                 elif tag_name == "FocalLength":
