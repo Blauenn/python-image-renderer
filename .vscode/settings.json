@@ -5,9 +5,11 @@
 		"getexif",
 		"ILCE",
 		"imshow",
+		"initialfile",
 		"padx",
 		"pady",
 		"textsize",
-		"textvariable"
+		"textvariable",
+		"tkinterdnd"
 	]
 }

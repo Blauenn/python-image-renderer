@@ -1,8 +1,6 @@
 import os
 import tkinter
 from tkinter import font, filedialog
-from svglib.svglib import svg2rlg
-from reportlab.graphics import renderPM
 from PIL import Image, ImageTk, ImageDraw, ImageFont
 
 from get_exif_data import get_exif_data
@@ -18,6 +16,7 @@ file_path = ""
 
 image_label = None
 file_name = tkinter.StringVar()
+file_lens_model = tkinter.StringVar()
 file_make = tkinter.StringVar()
 file_model = tkinter.StringVar()
 file_focal_length = tkinter.StringVar()
@@ -58,10 +57,11 @@ def file_prompt():
 
     if file_path:
         file_name.set(os.path.basename(file_path))
-        lens_focal_length, make, model, shot_focal_length, iso, shutter, aperture, date = get_exif_data(
+        lens_focal_length, lens_model, make, model, shot_focal_length, iso, shutter, aperture, date = get_exif_data(
             file_path)
 
         display_image(file_path)
+        file_lens_model.set(lens_model)
         file_make.set(make)
         file_model.set(model)
         file_focal_length.set(lens_focal_length)
@@ -74,46 +74,42 @@ def file_prompt():
 
         input_date.delete(0, tkinter.END)
         input_date.insert(0, date)
+    else:
+        file_name.set("")
 
+        file_make.set("")
+        file_model.set("")
+        file_focal_length.set("")
+        file_shot_focal_length.set("")
+        file_camera.set("")
+        file_iso.set("")
+        file_shutter.set("")
+        file_aperture.set("")
+        file_date.set("")
 
-# def file_export():
-#     with open("export.txt", "w") as file:
-#         file.write(f"Camera : {file_make.get()} {file_model.get()}\n")
-#         file.write(f"Focal length : {file_focal_length.get()}\n")
-#         file.write(f"Shot at : {file_shot_focal_length.get()}\n")
-#         file.write(f"ISO : {file_iso.get()}\n")
-#         file.write(f"Shutter speed : {file_shutter.get()}\n")
-#         file.write(f"Aperture : {file_aperture.get()}\n")
-#         if set_date.get() != "":
-#             file.write(f"Date : {set_date.get()}\n")
-#             print("Date is typed")
-#         else:
-#             file.write(f"Date : {file_date.get()}\n")
-#         if set_venue.get() != "":
-#             file.write(f"Venue : {set_venue.get()} {set_venue_extras.get()}\n")
-#         if set_facebook.get() != "":
-#             file.write(f"Facebook : {set_facebook.get()}\n")
-#         if set_instagram.get() != "":
-#             file.write(f"Instagram : {set_instagram.get()}\n")
+        input_date.delete(0, tkinter.END)
+
 
 def file_export():
     global file_path
     if file_path:
         # Get EXIF data and image dimensions
-        lens_focal_length, make, model, shot_focal_length, iso, shutter, aperture, date = get_exif_data(
+        lens_focal_length, lens_model, make, model, shot_focal_length, iso, shutter, aperture, date = get_exif_data(
             file_path)
 
-        # Open the image using PIL
         image = Image.open(file_path)
 
         # Determine if the image is vertical or horizontal
         width, height = image.size
+        y_position_increment = 0  # Increase y position based to the main image
         if height > width:  # Vertical image
             new_height = 1960
             new_width = int((new_height / height) * width)
+            y_position_increment = 0
         else:  # Horizontal image
             new_width = 2400
             new_height = int((new_width / width) * height)
+            y_position_increment = 200
 
         # Resize the image
         resized_image = image.resize((new_width, new_height))
@@ -143,37 +139,51 @@ def file_export():
         draw = ImageDraw.Draw(canvas)
 
         # Camera information
-        draw.text((x_offset - 60, y_offset + 20), lens_focal_length,
-                  fill="black", font=font_regular, anchor="rt")
+        # Lens specs
+        if ("GM" in str(lens_model)):
+            draw.text((x_offset - 60, y_offset + 20), lens_focal_length,
+                      fill="#cb4903", font=font_regular, anchor="rt")
+        else:
+            draw.text((x_offset - 60, y_offset + 20), lens_focal_length,
+                      fill="black", font=font_regular, anchor="rt")
+        # Camera make
         draw.text((x_offset - 60, y_offset + 150), make,
                   fill="black", font=font_bold, anchor="rt")
+        # Camera model
         draw.text((x_offset - 60, y_offset + 260), model,
                   fill="black", font=font_bold, anchor="rt")
 
         # Camera settings
+        # Shot focal length (Only show if the lens is a zoom lens)
         if (lens_focal_length != shot_focal_length):
-            draw.text((x_offset - 60, new_height - 410), str(shot_focal_length),
+            draw.text((x_offset - 60, new_height - 410 + y_position_increment), str(shot_focal_length),
                       fill="black", font=font_bold, anchor="rt")
-        draw.text((x_offset - 60, new_height - 280), f"ISO {str(iso)}",
+        # ISO
+        draw.text((x_offset - 60, new_height - 280 + y_position_increment), f"ISO {str(iso)}",
                   fill="black", font=font_bold, anchor="rt")
-        draw.text((x_offset - 60, new_height - 150), shutter,
+        # Shutter speed
+        draw.text((x_offset - 60, new_height - 150 + y_position_increment), shutter,
                   fill="black", font=font_bold, anchor="rt")
-        draw.text((x_offset - 60, new_height - 20), aperture,
+        # Aperture
+        draw.text((x_offset - 60, new_height - 20 + y_position_increment), aperture,
                   fill="black", font=font_bold, anchor="rt")
 
         # Event information
+        # Date
         if (input_date.get() != ""):
             draw.text((x_offset + new_width + 60, y_offset + 20), input_date.get(),
                       fill="black", font=font_regular)
         else:
-            draw.text((x_offset + new_width + 60, y_offset + 20), file_date.get(),
+            draw.text((x_offset + new_width + 60, y_offset + 20), date,
                       fill="black", font=font_regular)
+        # Event or location
         venue_text = input_venue.get("1.0", "end-1c")
         venue_lines = venue_text.split("\n")
         for i, line in enumerate(venue_lines):
             y_position = y_offset + 150 + i * 110
             draw.text((x_offset + new_width + 60, y_position), line,
                       fill="black", font=font_bold)
+        # Additional information (In a regular weight)
         final_y_position = y_offset + 150 + len(venue_lines) * 110
         draw.text((x_offset + new_width + 60, final_y_position),
                   input_venue_extras.get(), fill="black", font=font_regular_72)
@@ -198,30 +208,36 @@ def file_export():
         facebook_text = input_facebook.get("1.0", "end-1c")
         if (facebook_text != ""):
             canvas.paste(facebook_logo, (x_offset + new_width +
-                                         60, new_height - 20), facebook_logo)
+                                         60, new_height - 20 + y_position_increment), facebook_logo)
             facebook_lines = facebook_text.split("\n")
             if (len(facebook_lines) == 1):
-                draw.text((x_offset + new_width + 60 + 100 + 40, new_height),
+                draw.text((x_offset + new_width + 60 + 100 + 40, new_height + y_position_increment),
                           facebook_text, fill="black", font=font_bold_56)
             else:
-                draw.text((x_offset + new_width + 60 + 100 + 40, new_height - 40),
+                draw.text((x_offset + new_width + 60 + 100 + 40, new_height - 40 + y_position_increment),
                           facebook_text, fill="black", font=font_bold_56)
-
         # Instagram
         if (input_instagram.get() != ""):
             if (facebook_text != ""):
                 canvas.paste(instagram_logo, (x_offset + new_width +
-                                              60, new_height - 200), instagram_logo)
-                draw.text((x_offset + new_width + 60 + 100 + 40, new_height - 200 + 15),
+                                              60, new_height - 200 + y_position_increment), instagram_logo)
+                draw.text((x_offset + new_width + 60 + 100 + 40, new_height - 200 + 15 + y_position_increment),
                           input_instagram.get(), fill="black", font=font_bold_56)
             else:
                 canvas.paste(instagram_logo, (x_offset + new_width +
-                                              60, new_height - 20), instagram_logo)
+                                              60, new_height - 20 + y_position_increment), instagram_logo)
                 draw.text((x_offset + new_width + 60 + 100 + 40, new_height),
                           input_instagram.get(), fill="black", font=font_bold_56)
 
-        # Save the result
-        canvas.save("output_image.jpg")
+        export_file_name = filedialog.asksaveasfilename(
+            initialfile=file_name.get(),
+            defaultextension=".jpg",
+            filetypes=[("JPEG files", "*.jpg"), ("All files", "*.*")],
+            title="Save As"
+        )
+
+        if export_file_name:
+            canvas.save(export_file_name)
 
 
 # Header #
